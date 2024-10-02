@@ -53,7 +53,7 @@ const JsonFormatter: React.FC<JsonFormatterProps> = ({ initialContent, onContent
         </button>
       </div>
       {error && <span className="text-red-500">{error}</span>}
-      <div className="flex space-x-4">
+      <div className="flex space-x-4 dark:text-gray-300">
         <div className="flex-1">
           <h3 className="text-lg font-semibold mb-2">Input</h3>
           <textarea
