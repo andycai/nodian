@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import MarkdownEditor from './components/MarkdownEditor';
 import JsonFormatter from './components/JsonFormatter';
 import TimeConverter from './components/TimeConverter';
+import HashEncoder from './components/HashEncoder';
 
 const App: React.FC = () => {
   const [activeFeature, setActiveFeature] = useState<string>('markdown');
@@ -15,7 +16,7 @@ const App: React.FC = () => {
         {activeFeature === 'json' && (
           <div className="p-4">
             <JsonFormatter
-              content=""
+              initialContent=""
               onContentChange={(newContent) => {
                 // Handle content change if needed
                 console.log(newContent);
@@ -23,7 +24,8 @@ const App: React.FC = () => {
             />
           </div>
         )}
-        {activeFeature === 'time_converter' && <TimeConverter />}
+        {activeFeature === 'time' && <TimeConverter />}
+        {activeFeature === 'hash' && <HashEncoder />}
         {/* 其他功能组件将在这里添加 */}
       </div>
     </div>
