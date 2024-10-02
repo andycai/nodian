@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import MarkdownEditor from './components/MarkdownEditor';
 import JsonFormatter from './components/JsonFormatter';
+import TimeConverter from './components/TimeConverter';
 
 const App: React.FC = () => {
   const [activeFeature, setActiveFeature] = useState<string>('markdown');
@@ -22,6 +23,7 @@ const App: React.FC = () => {
             />
           </div>
         )}
+        {activeFeature === 'time_converter' && <TimeConverter />}
         {/* 其他功能组件将在这里添加 */}
       </div>
     </div>

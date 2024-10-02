@@ -12,7 +12,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveFeature }) => {
     { id: 'markdown', icon: FaMarkdown, label: 'Markdown' },
     { id: 'calendar', icon: FaCalendar, label: 'Calendar' },
     { id: 'json', icon: FaCode, label: 'JSON' },
-    { id: 'timestamp', icon: FaClock, label: 'Timestamp' },
+    { id: 'time_converter', icon: FaClock, label: 'TimeConverter' },
     { id: 'hash', icon: FaLock, label: 'Hash' },
     { id: 'clipboard', icon: FaClipboard, label: 'Clipboard' },
   ];
