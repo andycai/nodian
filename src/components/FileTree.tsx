@@ -59,7 +59,7 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
     try {
       const savedRootFolder = localStorage.getItem('currentWorkingDirectory');
       const rootFolder = savedRootFolder || await invoke('get_root_folder') as string;
-      console.log("Root folder:", rootFolder);
+    //   console.log("Root folder:", rootFolder);
       setRootPath(rootFolder);
     } catch (error) {
       console.error('Error loading root folder:', error);
@@ -68,7 +68,7 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
 
   const loadFileTree = async (path: string) => {
     try {
-      console.log("Loading file tree for path:", path);
+    //   console.log("Loading file tree for path:", path);
       const fileTree = await invoke('get_file_tree', { path }) as FileNode;
       setRoot(fileTree);
       if (selectedFile) {
