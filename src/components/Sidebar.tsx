@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import { FaMarkdown, FaCalendar, FaCode, FaClock, FaLock, FaClipboard, FaMoon, FaSun } from 'react-icons/fa';
 
 interface SidebarProps {
   setActiveFeature: (feature: string) => void;
@@ -8,34 +9,32 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ setActiveFeature }) => {
   const { theme, toggleTheme } = useTheme();
   const features = [
-    { id: 'markdown', icon: '📝', label: 'Markdown' },
-    { id: 'calendar', icon: '📅', label: 'Calendar' },
-    { id: 'json', icon: '🔧', label: 'JSON' },
-    { id: 'timestamp', icon: '⏱️', label: 'Timestamp' },
-    { id: 'hash', icon: '🔒', label: 'Hash' },
-    { id: 'clipboard', icon: '📋', label: 'Clipboard' },
+    { id: 'markdown', icon: FaMarkdown, label: 'Markdown' },
+    { id: 'calendar', icon: FaCalendar, label: 'Calendar' },
+    { id: 'json', icon: FaCode, label: 'JSON' },
+    { id: 'timestamp', icon: FaClock, label: 'Timestamp' },
+    { id: 'hash', icon: FaLock, label: 'Hash' },
+    { id: 'clipboard', icon: FaClipboard, label: 'Clipboard' },
   ];
 
   return (
-    <div className="w-16 bg-gray-100 dark:bg-gray-800 p-2">
+    <div className="w-16 bg-gray-100 dark:bg-gray-800 flex flex-col items-center py-4">
       {features.map((feature) => (
         <button
           key={feature.id}
-          className="w-full p-2 mb-2 text-center hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+          className="w-12 h-12 mb-4 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
           onClick={() => setActiveFeature(feature.id)}
+          title={feature.label}
         >
-          <span role="img" aria-label={feature.label}>
-            {feature.icon}
-          </span>
+          <feature.icon size={24} />
         </button>
       ))}
       <button
-        className="w-full p-2 mb-2 text-center hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+        className="w-12 h-12 mt-auto flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
         onClick={toggleTheme}
+        title="Toggle Theme"
       >
-        <span role="img" aria-label="Theme">
-          {theme === 'light' ? '🌙' : '☀️'}
-        </span>
+        {theme === 'light' ? <FaMoon size={24} /> : <FaSun size={24} />}
       </button>
     </div>
   );
