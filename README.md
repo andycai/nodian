@@ -4,6 +4,10 @@
 
 Just a simple markdown note tool.
 
+## Screen Shot
+
+![Screenshot](screenshot.png)
+
 ## Install
 
 ```bash
