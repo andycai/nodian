@@ -7,7 +7,7 @@
     "withGlobalTauri": false
   },
   "package": {
-    "productName": "notian",
+    "productName": "nodian",
     "version": "0.0.0"
   },
   "tauri": {
@@ -50,7 +50,7 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "notian",
+        "title": "Nodian",
         "width": 800,
         "height": 600
       }

@@ -51,7 +51,6 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
 
   const loadRootFolder = async () => {
     try {
-      // 尝试从 localStorage 获取上次保存的工作区目录
       const savedRootFolder = localStorage.getItem('currentWorkingDirectory');
       const rootFolder = savedRootFolder || await invoke('get_root_folder') as string;
       console.log("Root folder:", rootFolder);
@@ -66,7 +65,8 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
       console.log("Loading file tree for path:", path);
       const fileTree = await invoke('get_file_tree', { path }) as FileNode;
       setRoot(fileTree);
-      // 不再在这里重置expandedFolders
+      // 只展开根目录
+      setExpandedFolders(new Set([path]));
     } catch (error) {
       console.error('Error loading file tree:', error);
     }
@@ -107,6 +107,8 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
       setSelectedFile(null);
       // 保存新的工作区目录到 localStorage
       localStorage.setItem('currentWorkingDirectory', selected as string);
+      // 只展开新的根目录
+      setExpandedFolders(new Set([selected as string]));
     }
   };
 
