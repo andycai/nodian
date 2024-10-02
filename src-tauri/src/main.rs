@@ -2,10 +2,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 
 use std::fs;
 use std::path::PathBuf;
@@ -82,6 +78,21 @@ fn create_file(path: &str) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn rename_item(old_path: &str, new_path: &str) -> Result<(), String> {
+    fs::rename(old_path, new_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_item(path: &str) -> Result<(), String> {
+    let path = PathBuf::from(path);
+    if path.is_dir() {
+        fs::remove_dir_all(path).map_err(|e| e.to_string())
+    } else {
+        fs::remove_file(path).map_err(|e| e.to_string())
+    }
+}
+
 #[derive(serde::Serialize, Debug)]
 struct FileNode {
     name: String,
@@ -106,7 +117,9 @@ fn main() {
             read_file,
             write_file,
             create_folder,
-            create_file
+            create_file,
+            rename_item,
+            delete_item
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

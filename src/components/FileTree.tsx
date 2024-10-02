@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaFolder, FaFile, FaFolderOpen, FaPlus, FaSync, FaExpandAlt, FaCompressAlt, FaFolderPlus } from 'react-icons/fa';
+import { FaFolder, FaFile, FaFolderOpen, FaPlus, FaSync, FaExpandAlt, FaCompressAlt, FaFolderPlus, FaEdit, FaTrash } from 'react-icons/fa';
 import { invoke } from '@tauri-apps/api/tauri';
 import { open } from '@tauri-apps/api/dialog';
 
 interface FileTreeProps {
-  setSelectedFile: (file: string) => void;
+  setSelectedFile: (file: string | null) => void;
   selectedFile: string | null;
+  openFiles: string[];
+  setOpenFiles: React.Dispatch<React.SetStateAction<string[]>>;
+  rootPath: string;
+  setRootPath: React.Dispatch<React.SetStateAction<string>>;
 }
 
 interface FileNode {
@@ -20,18 +24,24 @@ interface CreationState {
   parentPath: string | null;
 }
 
-const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) => {
+const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, openFiles, setOpenFiles, rootPath, setRootPath }) => {
   const [root, setRoot] = useState<FileNode | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
-  const [rootPath, setRootPath] = useState<string>('');
   const [creationState, setCreationState] = useState<CreationState>({ type: null, parentPath: null });
   const [newItemName, setNewItemName] = useState<string>('');
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [renamingNode, setRenamingNode] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadRootFolder();
   }, []);
+
+  useEffect(() => {
+    if (rootPath) {
+      loadFileTree(rootPath);
+    }
+  }, [rootPath]);
 
   useEffect(() => {
     if (creationState.type && inputRef.current) {
@@ -41,10 +51,11 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) =>
 
   const loadRootFolder = async () => {
     try {
-      const rootFolder = await invoke('get_root_folder') as string;
+      // 尝试从 localStorage 获取上次保存的工作区目录
+      const savedRootFolder = localStorage.getItem('currentWorkingDirectory');
+      const rootFolder = savedRootFolder || await invoke('get_root_folder') as string;
       console.log("Root folder:", rootFolder);
       setRootPath(rootFolder);
-      await loadFileTree(rootFolder);
     } catch (error) {
       console.error('Error loading root folder:', error);
     }
@@ -54,7 +65,7 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) =>
     try {
       console.log("Loading file tree for path:", path);
       const fileTree = await invoke('get_file_tree', { path }) as FileNode;
-      console.log("File tree:", fileTree);
+    //   console.log("File tree:", fileTree);
       setRoot(fileTree);
       setExpandedFolders(new Set([fileTree.path]));
     } catch (error) {
@@ -92,7 +103,11 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) =>
     if (selected) {
       setRootPath(selected as string);
       console.log("selected: ", selected);
-      await loadFileTree(selected as string);
+      // 关闭所有打开的文件
+      setOpenFiles([]);
+      setSelectedFile(null);
+      // 保存新的工作区目录到 localStorage
+      localStorage.setItem('currentWorkingDirectory', selected as string);
     }
   };
 
@@ -122,6 +137,56 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) =>
     }
   };
 
+  const startRenaming = (path: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRenamingNode(path);
+    setNewItemName(path.split('/').pop() || '');
+  };
+
+  const handleRename = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && newItemName.trim() !== '' && renamingNode) {
+      const newPath = `${renamingNode.substring(0, renamingNode.lastIndexOf('/'))}/${newItemName}`;
+      try {
+        await invoke('rename_item', { oldPath: renamingNode, newPath });
+        await loadFileTree(rootPath);
+        setRenamingNode(null);
+        
+        // 更新打开的文件列表和选中的文件
+        setOpenFiles(prev => prev.map(file => file === renamingNode ? newPath : file));
+        if (selectedFile === renamingNode) {
+          setSelectedFile(newPath);
+        }
+      } catch (error) {
+        console.error('Error renaming item:', error);
+      }
+    } else if (e.key === 'Escape') {
+      setRenamingNode(null);
+    }
+  };
+
+  const deleteItem = async (path: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this item?')) {
+      try {
+        await invoke('delete_item', { path });
+        await loadFileTree(rootPath);
+        
+        // 从打开的文件列表中移除被删除的文件
+        setOpenFiles(prev => prev.filter(file => file !== path));
+        if (selectedFile === path) {
+          setSelectedFile(null);
+        }
+      } catch (error) {
+        console.error('Error deleting item:', error);
+      }
+    }
+  };
+
+  const truncateName = (name: string, maxLength: number = 18) => {
+    if (name.length <= maxLength) return name;
+    return name.substring(0, maxLength - 3) + '...';
+  };
+
   const sortNodes = (nodes: FileNode[]): FileNode[] => {
     return nodes.sort((a, b) => {
       if (a.is_dir && !b.is_dir) return -1;
@@ -143,17 +208,36 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) =>
         ) : (
           <FaFile className="mr-2" />
         )}
-        <span>{node.name}</span>
-        {node.is_dir && (
-          <>
-            <button onClick={(e) => { e.stopPropagation(); startCreating('file'); }} className="ml-2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
-              <FaPlus size={12} />
-            </button>
-            <button onClick={(e) => { e.stopPropagation(); startCreating('folder'); }} className="ml-1 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
-              <FaFolderPlus size={12} />
-            </button>
-          </>
+        {renamingNode === node.path ? (
+          <input
+            type="text"
+            value={newItemName}
+            onChange={(e) => setNewItemName(e.target.value)}
+            onKeyDown={handleRename}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full p-1 border rounded"
+          />
+        ) : (
+          <span title={node.name}>{truncateName(node.name)}</span>
         )}
+        <div className="ml-auto">
+          {/* <button onClick={(e) => startRenaming(node.path, e)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
+            <FaEdit size={12} />
+          </button>
+          <button onClick={(e) => deleteItem(node.path, e)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
+            <FaTrash size={12} />
+          </button> */}
+          {/* {node.is_dir && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); startCreating('file'); }} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
+                <FaPlus size={12} />
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); startCreating('folder'); }} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
+                <FaFolderPlus size={12} />
+              </button>
+            </>
+          )} */}
+        </div>
       </div>
       {node.is_dir && expandedFolders.has(node.path) && (
         <>
@@ -220,6 +304,16 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) =>
         >
           {expandedFolders.size > 0 ? <FaCompressAlt /> : <FaExpandAlt />}
         </button>
+        {selectedNode && (
+          <>
+            <button onClick={(e) => startRenaming(selectedNode, e)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="Rename">
+              <FaEdit />
+            </button>
+            <button onClick={(e) => deleteItem(selectedNode, e)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="Delete">
+              <FaTrash />
+            </button>
+          </>
+        )}
       </div>
       {root ? renderTree(root) : <div>Loading...</div>}
     </div>
