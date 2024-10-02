@@ -4,7 +4,14 @@ import Editor from './Editor';
 
 const MarkdownEditor: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [openFiles, setOpenFiles] = useState<string[]>([]);
+  const [openFiles, setOpenFiles] = useState<string[]>(() => {
+    const savedFiles = localStorage.getItem('openFiles');
+    return savedFiles ? JSON.parse(savedFiles) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('openFiles', JSON.stringify(openFiles));
+  }, [openFiles]);
 
   useEffect(() => {
     if (selectedFile && !openFiles.includes(selectedFile)) {
