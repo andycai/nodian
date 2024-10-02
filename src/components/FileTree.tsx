@@ -176,6 +176,28 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) =>
     </div>
   );
 
+  const toggleAllFolders = () => {
+    if (expandedFolders.size > 0) {
+      // 如果有展开的文件夹，则全部收起
+      setExpandedFolders(new Set());
+    } else if (root) {
+      // 如果全部收起，则展开所有文件夹
+      const allFolders = getAllFolderPaths(root);
+      setExpandedFolders(new Set(allFolders));
+    }
+  };
+
+  const getAllFolderPaths = (node: FileNode): string[] => {
+    let paths: string[] = [];
+    if (node.is_dir) {
+      paths.push(node.path);
+      node.children.forEach(child => {
+        paths = paths.concat(getAllFolderPaths(child));
+      });
+    }
+    return paths;
+  };
+
   return (
     <div className="w-64 h-full border-r border-gray-200 dark:border-gray-700 overflow-auto">
       <div className="flex justify-between p-2 border-b border-gray-200 dark:border-gray-700">
@@ -193,7 +215,7 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) =>
         </button>
         <button
           className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
-          onClick={() => setExpandedFolders(expandedFolders.size > 0 ? new Set() : new Set(Object.keys(root || {})))}
+          onClick={toggleAllFolders}
           title={expandedFolders.size > 0 ? "Collapse all" : "Expand all"}
         >
           {expandedFolders.size > 0 ? <FaCompressAlt /> : <FaExpandAlt />}
