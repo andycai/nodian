@@ -62,11 +62,13 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) =>
     }
   };
 
-  const handleFileClick = (file: FileNode) => {
-    if (!file.is_dir) {
-      setSelectedFile(file.path);
+  const handleNodeClick = (node: FileNode) => {
+    if (node.is_dir) {
+      toggleFolder(node.path);
+    } else {
+      setSelectedFile(node.path);
     }
-    setSelectedNode(file.path);
+    setSelectedNode(node.path);
   };
 
   const toggleFolder = (path: string) => {
@@ -94,7 +96,8 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) =>
     }
   };
 
-  const startCreating = (type: 'file' | 'folder', parentPath: string) => {
+  const startCreating = (type: 'file' | 'folder') => {
+    const parentPath = selectedNode && root?.is_dir ? selectedNode : rootPath;
     setCreationState({ type, parentPath });
     setNewItemName('');
   };
@@ -133,7 +136,7 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) =>
         className={`flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 p-1 ${
           node.path === selectedNode ? 'bg-blue-200 dark:bg-blue-700' : ''
         }`}
-        onClick={() => node.is_dir ? toggleFolder(node.path) : handleFileClick(node)}
+        onClick={() => handleNodeClick(node)}
       >
         {node.is_dir ? (
           expandedFolders.has(node.path) ? <FaFolderOpen className="mr-2" /> : <FaFolder className="mr-2" />
@@ -143,10 +146,10 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) =>
         <span>{node.name}</span>
         {node.is_dir && (
           <>
-            <button onClick={(e) => { e.stopPropagation(); startCreating('file', node.path); }} className="ml-2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
+            <button onClick={(e) => { e.stopPropagation(); startCreating('file'); }} className="ml-2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
               <FaPlus size={12} />
             </button>
-            <button onClick={(e) => { e.stopPropagation(); startCreating('folder', node.path); }} className="ml-1 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
+            <button onClick={(e) => { e.stopPropagation(); startCreating('folder'); }} className="ml-1 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
               <FaFolderPlus size={12} />
             </button>
           </>
@@ -179,10 +182,10 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) =>
         <button onClick={changeRootFolder} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="Change root folder">
           <FaFolderPlus />
         </button>
-        <button onClick={() => startCreating('file', selectedNode || rootPath)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="New file">
+        <button onClick={() => startCreating('file')} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="New file">
           <FaPlus />
         </button>
-        <button onClick={() => startCreating('folder', selectedNode || rootPath)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="New folder">
+        <button onClick={() => startCreating('folder')} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="New folder">
           <FaFolder />
         </button>
         <button onClick={() => loadFileTree(rootPath)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="Refresh">
