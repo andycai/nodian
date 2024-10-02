@@ -85,7 +85,7 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
   const expandToFile = (filePath: string) => {
     const parts = filePath.split('/');
     let currentPath = '';
-    const newExpandedFolders = new Set<string>();
+    const newExpandedFolders = new Set(expandedFolders); // 创建当前展开文件夹的副本
 
     for (const part of parts.slice(0, -1)) {
       currentPath += part + '/';
