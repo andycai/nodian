@@ -12,16 +12,23 @@ const MarkdownEditor: React.FC = () => {
   const [rootPath, setRootPath] = useState<string>('');
 
   useEffect(() => {
-    const loadInitialRootPath = async () => {
+    const loadInitialState = async () => {
       const savedRootPath = localStorage.getItem('currentWorkingDirectory');
+      const savedOpenFiles = localStorage.getItem('openFiles');
+      const savedSelectedFile = localStorage.getItem('selectedFile');
+
       if (savedRootPath) {
         setRootPath(savedRootPath);
       } else {
         const defaultRootPath = await invoke('get_root_folder') as string;
         setRootPath(defaultRootPath);
       }
+
+      if (savedSelectedFile) {
+        setSelectedFile(savedSelectedFile);
+      }
     };
-    loadInitialRootPath();
+    loadInitialState();
   }, []);
 
   useEffect(() => {
@@ -29,10 +36,13 @@ const MarkdownEditor: React.FC = () => {
   }, [openFiles]);
 
   useEffect(() => {
-    if (selectedFile && !openFiles.includes(selectedFile)) {
-      setOpenFiles(prev => [...prev, selectedFile]);
+    if (selectedFile) {
+      localStorage.setItem('selectedFile', selectedFile);
+      if (!openFiles.includes(selectedFile)) {
+        setOpenFiles(prev => [...prev, selectedFile]);
+      }
     }
-  }, [selectedFile, openFiles]);
+  }, [selectedFile]);
 
   return (
     <div className="flex h-full">

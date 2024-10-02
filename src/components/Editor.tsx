@@ -18,6 +18,14 @@ const Editor: React.FC<EditorProps> = ({ selectedFile, setSelectedFile, openFile
   const [fileContents, setFileContents] = useState<Record<string, FileContent>>({});
   const [isEditing, setIsEditing] = useState<boolean>(true);
 
+//   useEffect(() => {
+//     openFiles.forEach(file => {
+//       if (!fileContents[file]) {
+//         loadFileContent(file);
+//       }
+//     });
+//   }, [openFiles]);
+
   useEffect(() => {
     if (selectedFile && !fileContents[selectedFile]) {
       loadFileContent(selectedFile);
@@ -89,11 +97,11 @@ const Editor: React.FC<EditorProps> = ({ selectedFile, setSelectedFile, openFile
 
   return (
     <div className="flex-1 flex flex-col h-full">
-      <div className="flex border-b border-gray-200 dark:border-gray-700">
+      <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
         {openFiles.map(file => (
           <div
             key={file}
-            className={`px-4 py-2 cursor-pointer flex items-center ${
+            className={`px-4 py-2 cursor-pointer flex items-center whitespace-nowrap ${
               file === selectedFile ? 'bg-gray-200 dark:bg-gray-700' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
             onClick={() => setSelectedFile(file)}

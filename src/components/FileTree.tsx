@@ -44,6 +44,12 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
   }, [rootPath]);
 
   useEffect(() => {
+    if (selectedFile) {
+      expandToFile(selectedFile);
+    }
+  }, [selectedFile, root]);
+
+  useEffect(() => {
     if (creationState.type && inputRef.current) {
       inputRef.current.focus();
     }
@@ -65,11 +71,28 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
       console.log("Loading file tree for path:", path);
       const fileTree = await invoke('get_file_tree', { path }) as FileNode;
       setRoot(fileTree);
-      // 只展开根目录
-      setExpandedFolders(new Set([path]));
+      if (selectedFile) {
+        expandToFile(selectedFile);
+      } else {
+        // 只展开根目录
+        setExpandedFolders(new Set([path]));
+      }
     } catch (error) {
       console.error('Error loading file tree:', error);
     }
+  };
+
+  const expandToFile = (filePath: string) => {
+    const parts = filePath.split('/');
+    let currentPath = '';
+    const newExpandedFolders = new Set<string>();
+
+    for (const part of parts.slice(0, -1)) {
+      currentPath += part + '/';
+      newExpandedFolders.add(currentPath.slice(0, -1));
+    }
+
+    setExpandedFolders(newExpandedFolders);
   };
 
   const handleNodeClick = (node: FileNode) => {
