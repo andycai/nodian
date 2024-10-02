@@ -5,6 +5,7 @@ import JsonFormatter from './components/JsonFormatter';
 import TimeConverter from './components/TimeConverter';
 import HashEncoder from './components/HashEncoder';
 import ClipboardManager from './components/ClipboardManager';
+import Calendar from './components/Calendar';
 
 const App: React.FC = () => {
   const [activeFeature, setActiveFeature] = useState<string>('markdown');
@@ -28,6 +29,7 @@ const App: React.FC = () => {
         {activeFeature === 'time' && <TimeConverter />}
         {activeFeature === 'hash' && <HashEncoder />}
         {activeFeature === 'clipboard' && <ClipboardManager />}
+        {activeFeature === 'calendar' && <Calendar />}
       </div>
     </div>
   );

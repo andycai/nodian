@@ -9,6 +9,9 @@ use tauri::Manager;
 use log::info;
 use arboard::Clipboard;
 use std::sync::Mutex;
+use rusqlite::{params, Connection, Result};
+use serde::{Deserialize, Serialize};
+// use chrono::NaiveDate;
 
 #[tauri::command]
 fn get_root_folder() -> String {
@@ -109,6 +112,68 @@ fn set_clipboard_content(content: String, state: tauri::State<ClipboardState>) -
     clipboard.set_text(content).map_err(|e| e.to_string())
 }
 
+// 日程
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Event {
+    id: i64,
+    title: String,
+    description: String,
+    date: String,
+}
+
+#[tauri::command]
+fn get_events(date: String) -> Result<Vec<Event>, String> {
+    let conn = Connection::open("events.db").map_err(|e| e.to_string())?;
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS events (
+            id INTEGER PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT,
+            date TEXT NOT NULL
+        )",
+        [],
+    )
+    .map_err(|e| e.to_string())?;
+
+    let mut stmt = conn
+        .prepare("SELECT id, title, description, date FROM events WHERE date = ?")
+        .map_err(|e| e.to_string())?;
+    let events = stmt
+        .query_map(params![date], |row| {
+            Ok(Event {
+                id: row.get(0)?,
+                title: row.get(1)?,
+                description: row.get(2)?,
+                date: row.get(3)?,
+            })
+        })
+        .map_err(|e| e.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+
+    Ok(events)
+}
+
+#[tauri::command]
+fn add_event(title: String, description: String, date: String) -> Result<(), String> {
+    let conn = Connection::open("events.db").map_err(|e| e.to_string())?;
+    conn.execute(
+        "INSERT INTO events (title, description, date) VALUES (?, ?, ?)",
+        params![title, description, date],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn delete_event(id: i64) -> Result<(), String> {
+    let conn = Connection::open("events.db").map_err(|e| e.to_string())?;
+    conn.execute("DELETE FROM events WHERE id = ?", params![id])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[derive(serde::Serialize, Debug)]
 struct FileNode {
     name: String,
@@ -138,7 +203,10 @@ fn main() {
             rename_item,
             delete_item,
             get_clipboard_content,
-            set_clipboard_content
+            set_clipboard_content,
+            get_events,
+            add_event,
+            delete_event
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
