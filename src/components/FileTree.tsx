@@ -256,15 +256,17 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
   const renderTree = (node: FileNode) => (
     <div key={node.path} className="ml-4">
       <div
-        className={`flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 p-1 ${
-          node.path === selectedNode ? 'bg-blue-200 dark:bg-blue-700' : ''
+        className={`flex items-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 ${
+          node.path === selectedNode ? 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200' : 'text-gray-800 dark:text-gray-200'
         }`}
         onClick={() => handleNodeClick(node)}
       >
         {node.is_dir ? (
-          expandedFolders.has(node.path) ? <FaFolderOpen className="mr-2" /> : <FaFolder className="mr-2" />
+          expandedFolders.has(node.path) ? 
+            <FaFolderOpen className="mr-2 text-yellow-600 dark:text-yellow-400" /> : 
+            <FaFolder className="mr-2 text-yellow-600 dark:text-yellow-400" />
         ) : (
-          <FaFile className="mr-2" />
+          <FaFile className="mr-2 text-gray-600 dark:text-gray-400" />
         )}
         {renamingNode === node.path ? (
           <input
@@ -274,10 +276,10 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
             onChange={(e) => setNewItemName(e.target.value)}
             onKeyDown={handleRename}
             onClick={(e) => e.stopPropagation()}
-            className="w-full p-1 border rounded"
+            className="w-full p-1 border rounded bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"
           />
         ) : (
-          <span title={node.name}>{truncateName(node.name)}</span>
+          <span title={node.name} className="text-gray-800 dark:text-gray-200">{truncateName(node.name)}</span>
         )}
         <div className="ml-auto">
           {/* <button onClick={(e) => startRenaming(node.path, e)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
@@ -342,22 +344,22 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
   };
 
   return (
-    <div className="w-64 h-full border-r border-gray-200 dark:border-gray-700 overflow-auto">
+    <div className="w-64 h-full border-r border-gray-200 dark:border-gray-700 overflow-auto bg-white dark:bg-gray-900">
       <div className="flex justify-between p-2 border-b border-gray-200 dark:border-gray-700">
-        <button onClick={changeRootFolder} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="Change root folder">
+        <button onClick={changeRootFolder} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-400" title="Change root folder">
           <FaFolderPlus />
         </button>
-        <button onClick={() => startCreating('file')} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="New file">
+        <button onClick={() => startCreating('file')} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-400" title="New file">
           <FaPlus />
         </button>
-        <button onClick={() => startCreating('folder')} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="New folder">
+        <button onClick={() => startCreating('folder')} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-400" title="New folder">
           <FaFolder />
         </button>
-        <button onClick={() => loadFileTree(rootPath)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="Refresh">
+        <button onClick={() => loadFileTree(rootPath)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-400" title="Refresh">
           <FaSync />
         </button>
         <button
-          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+          className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-400"
           onClick={toggleAllFolders}
           title={expandedFolders.size > 0 ? "Collapse all" : "Expand all"}
         >
@@ -365,16 +367,16 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
         </button>
         {selectedNode && (
           <>
-            <button onClick={(e) => startRenaming(selectedNode, e)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="Rename">
+            <button onClick={(e) => startRenaming(selectedNode, e)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-400" title="Rename">
               <FaEdit />
             </button>
-            <button onClick={(e) => deleteItem(selectedNode, e)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="Delete">
+            <button onClick={(e) => deleteItem(selectedNode, e)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-400" title="Delete">
               <FaTrash />
             </button>
           </>
         )}
       </div>
-      {root ? renderTree(root) : <div>Loading...</div>}
+      {root ? renderTree(root) : <div className="text-gray-800 dark:text-gray-200">Loading...</div>}
     </div>
   );
 };
