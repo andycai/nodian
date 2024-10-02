@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
 
 interface EditorProps {
   selectedFile: string | null;
@@ -95,6 +98,26 @@ const Editor: React.FC<EditorProps> = ({ selectedFile, setSelectedFile, openFile
     }
   };
 
+  const markdownComponents = {
+    h1: ({node, ...props}) => <h1 style={{fontSize: '2.5em', borderBottom: '1px solid #eaecef', paddingBottom: '.3em', marginTop: '24px', marginBottom: '16px'}} {...props}/>,
+    h2: ({node, ...props}) => <h2 style={{fontSize: '2em', borderBottom: '1px solid #eaecef', paddingBottom: '.3em', marginTop: '24px', marginBottom: '16px'}} {...props}/>,
+    h3: ({node, ...props}) => <h3 style={{fontSize: '1.5em', marginTop: '24px', marginBottom: '16px'}} {...props}/>,
+    h4: ({node, ...props}) => <h4 style={{fontSize: '1.25em', marginTop: '24px', marginBottom: '16px'}} {...props}/>,
+    h5: ({node, ...props}) => <h5 style={{fontSize: '1em', marginTop: '24px', marginBottom: '16px'}} {...props}/>,
+    h6: ({node, ...props}) => <h6 style={{fontSize: '0.875em', marginTop: '24px', marginBottom: '16px'}} {...props}/>,
+    p: ({node, ...props}) => <p style={{marginTop: '0', marginBottom: '16px'}} {...props}/>,
+    a: ({node, ...props}) => <a style={{color: '#0366d6', textDecoration: 'none'}} {...props}/>,
+    ul: ({node, ...props}) => <ul style={{paddingLeft: '2em', marginBottom: '16px'}} {...props}/>,
+    ol: ({node, ...props}) => <ol style={{paddingLeft: '2em', marginBottom: '16px'}} {...props}/>,
+    li: ({node, ...props}) => <li style={{marginTop: '0.25em'}} {...props}/>,
+    blockquote: ({node, ...props}) => <blockquote style={{padding: '0 1em', color: '#6a737d', borderLeft: '0.25em solid #dfe2e5', marginBottom: '16px'}} {...props}/>,
+    code: ({node, inline, ...props}) => 
+      inline 
+        ? <code style={{background: 'rgba(27,31,35,.05)', padding: '.2em .4em', borderRadius: '3px', fontSize: '85%', fontFamily: 'SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace'}} {...props}/>
+        : <pre style={{background: '#f6f8fa', padding: '16px', overflow: 'auto', fontSize: '85%', lineHeight: '1.45', borderRadius: '3px', marginBottom: '16px'}}><code style={{fontFamily: 'SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace'}} {...props}/></pre>,
+    img: ({node, ...props}) => <img style={{maxWidth: '100%', boxSizing: 'content-box'}} {...props} />
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full">
       <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
@@ -117,11 +140,11 @@ const Editor: React.FC<EditorProps> = ({ selectedFile, setSelectedFile, openFile
           </div>
         ))}
       </div>
-      <div className="flex-1 flex">
+      <div className="flex-1 flex overflow-hidden">
         {selectedFile && (
           <>
             <textarea
-              className="flex-1 p-4 resize-none outline-none bg-white dark:bg-gray-900 text-black dark:text-white"
+              className="flex-1 p-4 resize-none outline-none bg-white dark:bg-gray-900 text-black dark:text-white overflow-auto"
               value={fileContents[selectedFile]?.content || ''}
               onChange={handleContentChange}
               onKeyDown={handleKeyDown}
@@ -131,7 +154,13 @@ const Editor: React.FC<EditorProps> = ({ selectedFile, setSelectedFile, openFile
               className="flex-1 p-4 overflow-auto bg-white dark:bg-gray-900 text-black dark:text-white"
               style={{ display: isEditing ? 'none' : 'block' }}
             >
-              <ReactMarkdown>{fileContents[selectedFile]?.content || ''}</ReactMarkdown>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                components={markdownComponents}
+              >
+                {fileContents[selectedFile]?.content || ''}
+              </ReactMarkdown>
             </div>
           </>
         )}
