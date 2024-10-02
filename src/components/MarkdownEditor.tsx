@@ -22,10 +22,15 @@ const MarkdownEditor: React.FC = () => {
   return (
     <div className="flex h-full">
       <div className="w-64 border-r border-gray-200 dark:border-gray-700">
-        <FileTree setSelectedFile={setSelectedFile} />
+        <FileTree setSelectedFile={setSelectedFile} selectedFile={selectedFile} />
       </div>
       <div className="flex-1">
-        <Editor selectedFile={selectedFile} openFiles={openFiles} setOpenFiles={setOpenFiles} />
+        <Editor 
+          selectedFile={selectedFile} 
+          setSelectedFile={setSelectedFile}
+          openFiles={openFiles} 
+          setOpenFiles={setOpenFiles}
+        />
       </div>
     </div>
   );

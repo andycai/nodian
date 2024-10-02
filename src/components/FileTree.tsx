@@ -1,27 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaFolder, FaFile, FaFolderOpen, FaPlus, FaSync, FaExpandAlt, FaCompressAlt, FaFolderPlus } from 'react-icons/fa';
 import { invoke } from '@tauri-apps/api/tauri';
 import { open } from '@tauri-apps/api/dialog';
 
 interface FileTreeProps {
   setSelectedFile: (file: string) => void;
+  selectedFile: string | null;
 }
 
 interface FileNode {
   name: string;
   path: string;
-  is_dir: boolean;  // 改为 is_dir 以匹配后端
+  is_dir: boolean;
   children: FileNode[];
 }
 
-const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile }) => {
+interface CreationState {
+  type: 'file' | 'folder' | null;
+  parentPath: string | null;
+}
+
+const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile }) => {
   const [root, setRoot] = useState<FileNode | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [rootPath, setRootPath] = useState<string>('');
+  const [creationState, setCreationState] = useState<CreationState>({ type: null, parentPath: null });
+  const [newItemName, setNewItemName] = useState<string>('');
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadRootFolder();
   }, []);
+
+  useEffect(() => {
+    if (creationState.type && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [creationState]);
 
   const loadRootFolder = async () => {
     try {
@@ -50,6 +66,7 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile }) => {
     if (!file.is_dir) {
       setSelectedFile(file.path);
     }
+    setSelectedNode(file.path);
   };
 
   const toggleFolder = (path: string) => {
@@ -77,22 +94,45 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile }) => {
     }
   };
 
-  const createNewFolder = async () => {
-    const folderName = prompt("Enter new folder name:");
-    if (folderName) {
+  const startCreating = (type: 'file' | 'folder', parentPath: string) => {
+    setCreationState({ type, parentPath });
+    setNewItemName('');
+  };
+
+  const handleCreation = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && newItemName.trim() !== '') {
+      const newPath = `${creationState.parentPath}/${newItemName}`;
       try {
-        await invoke('create_folder', { path: `${rootPath}/${folderName}` });
+        if (creationState.type === 'file') {
+          await invoke('create_file', { path: newPath });
+        } else {
+          await invoke('create_folder', { path: newPath });
+        }
         await loadFileTree(rootPath);
+        setExpandedFolders(prev => new Set(prev).add(creationState.parentPath!));
       } catch (error) {
-        console.error('Error creating new folder:', error);
+        console.error(`Error creating ${creationState.type}:`, error);
       }
+      setCreationState({ type: null, parentPath: null });
+    } else if (e.key === 'Escape') {
+      setCreationState({ type: null, parentPath: null });
     }
+  };
+
+  const sortNodes = (nodes: FileNode[]): FileNode[] => {
+    return nodes.sort((a, b) => {
+      if (a.is_dir && !b.is_dir) return -1;
+      if (!a.is_dir && b.is_dir) return 1;
+      return a.name.localeCompare(b.name);
+    });
   };
 
   const renderTree = (node: FileNode) => (
     <div key={node.path} className="ml-4">
       <div
-        className="flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 p-1"
+        className={`flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 p-1 ${
+          node.path === selectedNode ? 'bg-blue-200 dark:bg-blue-700' : ''
+        }`}
         onClick={() => node.is_dir ? toggleFolder(node.path) : handleFileClick(node)}
       >
         {node.is_dir ? (
@@ -101,8 +141,35 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile }) => {
           <FaFile className="mr-2" />
         )}
         <span>{node.name}</span>
+        {node.is_dir && (
+          <>
+            <button onClick={(e) => { e.stopPropagation(); startCreating('file', node.path); }} className="ml-2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
+              <FaPlus size={12} />
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); startCreating('folder', node.path); }} className="ml-1 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
+              <FaFolderPlus size={12} />
+            </button>
+          </>
+        )}
       </div>
-      {node.is_dir && expandedFolders.has(node.path) && node.children.map(child => renderTree(child))}
+      {node.is_dir && expandedFolders.has(node.path) && (
+        <>
+          {sortNodes(node.children).map(child => renderTree(child))}
+          {creationState.parentPath === node.path && (
+            <div className="ml-4 mt-1">
+              <input
+                ref={inputRef}
+                type="text"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={handleCreation}
+                className="w-full p-1 border rounded"
+                placeholder={`New ${creationState.type} name...`}
+              />
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 
@@ -112,10 +179,10 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile }) => {
         <button onClick={changeRootFolder} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="Change root folder">
           <FaFolderPlus />
         </button>
-        <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="New file">
+        <button onClick={() => startCreating('file', selectedNode || rootPath)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="New file">
           <FaPlus />
-        </button> 
-        <button onClick={createNewFolder} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="New folder">
+        </button>
+        <button onClick={() => startCreating('folder', selectedNode || rootPath)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="New folder">
           <FaFolder />
         </button>
         <button onClick={() => loadFileTree(rootPath)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="Refresh">
