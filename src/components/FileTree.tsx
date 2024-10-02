@@ -65,9 +65,8 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
     try {
       console.log("Loading file tree for path:", path);
       const fileTree = await invoke('get_file_tree', { path }) as FileNode;
-    //   console.log("File tree:", fileTree);
       setRoot(fileTree);
-      setExpandedFolders(new Set([fileTree.path]));
+      // 不再在这里重置expandedFolders
     } catch (error) {
       console.error('Error loading file tree:', error);
     }
@@ -140,7 +139,22 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
   const startRenaming = (path: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setRenamingNode(path);
-    setNewItemName(path.split('/').pop() || '');
+    const fileName = path.split('/').pop() || '';
+    setNewItemName(fileName);
+    
+    // 使用 setTimeout 来确保在下一个渲染周期执行
+    setTimeout(() => {
+      const input = inputRef.current;
+      if (input) {
+        input.focus();
+        const extensionIndex = fileName.lastIndexOf('.');
+        if (extensionIndex > 0) {
+          input.setSelectionRange(0, extensionIndex);
+        } else {
+          input.select();
+        }
+      }
+    }, 0);
   };
 
   const handleRename = async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -148,6 +162,17 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
       const newPath = `${renamingNode.substring(0, renamingNode.lastIndexOf('/'))}/${newItemName}`;
       try {
         await invoke('rename_item', { oldPath: renamingNode, newPath });
+        
+        // 更新expandedFolders
+        setExpandedFolders(prev => {
+          const newSet = new Set(prev);
+          if (newSet.has(renamingNode)) {
+            newSet.delete(renamingNode);
+            newSet.add(newPath);
+          }
+          return newSet;
+        });
+
         await loadFileTree(rootPath);
         setRenamingNode(null);
         
@@ -169,6 +194,14 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
     if (window.confirm('Are you sure you want to delete this item?')) {
       try {
         await invoke('delete_item', { path });
+        
+        // 更新expandedFolders
+        setExpandedFolders(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(path);
+          return newSet;
+        });
+
         await loadFileTree(rootPath);
         
         // 从打开的文件列表中移除被删除的文件
@@ -210,6 +243,7 @@ const FileTree: React.FC<FileTreeProps> = ({ setSelectedFile, selectedFile, open
         )}
         {renamingNode === node.path ? (
           <input
+            ref={inputRef}
             type="text"
             value={newItemName}
             onChange={(e) => setNewItemName(e.target.value)}
