@@ -4,6 +4,7 @@ import MarkdownEditor from './components/MarkdownEditor';
 import JsonFormatter from './components/JsonFormatter';
 import TimeConverter from './components/TimeConverter';
 import HashEncoder from './components/HashEncoder';
+import ClipboardManager from './components/ClipboardManager';
 
 const App: React.FC = () => {
   const [activeFeature, setActiveFeature] = useState<string>('markdown');
@@ -26,7 +27,7 @@ const App: React.FC = () => {
         )}
         {activeFeature === 'time' && <TimeConverter />}
         {activeFeature === 'hash' && <HashEncoder />}
-        {/* 其他功能组件将在这里添加 */}
+        {activeFeature === 'clipboard' && <ClipboardManager />}
       </div>
     </div>
   );

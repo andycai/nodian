@@ -7,6 +7,8 @@ use std::fs;
 use std::path::PathBuf;
 use tauri::Manager;
 use log::info;
+use arboard::Clipboard;
+use std::sync::Mutex;
 
 #[tauri::command]
 fn get_root_folder() -> String {
@@ -93,6 +95,20 @@ fn delete_item(path: &str) -> Result<(), String> {
     }
 }
 
+struct ClipboardState(Mutex<Clipboard>);
+
+#[tauri::command]
+fn get_clipboard_content(state: tauri::State<ClipboardState>) -> Result<String, String> {
+    let mut clipboard = state.0.lock().unwrap();
+    clipboard.get_text().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn set_clipboard_content(content: String, state: tauri::State<ClipboardState>) -> Result<(), String> {
+    let mut clipboard = state.0.lock().unwrap();
+    clipboard.set_text(content).map_err(|e| e.to_string())
+}
+
 #[derive(serde::Serialize, Debug)]
 struct FileNode {
     name: String,
@@ -111,6 +127,7 @@ fn main() {
             }
             Ok(())
         })
+        .manage(ClipboardState(Mutex::new(Clipboard::new().unwrap())))
         .invoke_handler(tauri::generate_handler![
             get_root_folder,
             get_file_tree,
@@ -119,7 +136,9 @@ fn main() {
             create_folder,
             create_file,
             rename_item,
-            delete_item
+            delete_item,
+            get_clipboard_content,
+            set_clipboard_content
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
