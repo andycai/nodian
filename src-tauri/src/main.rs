@@ -9,7 +9,7 @@ use tauri::Manager;
 use log::info;
 use arboard::Clipboard;
 use std::sync::Mutex;
-use rusqlite::{params, Connection, Result};
+use rusqlite::{params, Connection, Result as SqliteResult};
 use serde::{Deserialize, Serialize};
 // use chrono::NaiveDate;
 
@@ -104,6 +104,9 @@ struct ClipboardState(Mutex<Clipboard>);
 fn get_clipboard_content(state: tauri::State<ClipboardState>) -> Result<String, String> {
     let mut clipboard = state.0.lock().unwrap();
     clipboard.get_text().map_err(|e| e.to_string())
+    // let content = clipboard.get_text().map_err(|e| e.to_string())?;
+    // clipboard.set_text("").map_err(|e| e.to_string())?;
+    // Ok(content)
 }
 
 #[tauri::command]
@@ -182,6 +185,74 @@ struct FileNode {
     children: Vec<FileNode>,
 }
 
+// 新增结构体用于表示剪贴板记录
+#[derive(Debug, Serialize, Deserialize)]
+struct ClipboardRecord {
+    id: i64,
+    content: String,
+    timestamp: i64,
+}
+
+// 初始化数据库连接和表
+fn init_clipboard_db() -> SqliteResult<Connection> {
+    let conn = Connection::open("clipboard.db")?;
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS clipboard_history (
+            id INTEGER PRIMARY KEY,
+            content TEXT NOT NULL,
+            timestamp INTEGER NOT NULL
+        )",
+        [],
+    )?;
+    Ok(conn)
+}
+
+#[tauri::command]
+fn add_clipboard_record(content: String, state: tauri::State<ClipboardState>) -> Result<(), String> {
+    let mut clipboard = state.0.lock().unwrap();
+    clipboard.set_text(&content).map_err(|e| e.to_string())?;
+
+    let conn = init_clipboard_db().map_err(|e| e.to_string())?;
+    let timestamp = chrono::Utc::now().timestamp();
+    conn.execute(
+        "INSERT INTO clipboard_history (content, timestamp) VALUES (?, ?)",
+        params![content, timestamp],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn get_clipboard_history() -> Result<Vec<ClipboardRecord>, String> {
+    let conn = init_clipboard_db().map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare("SELECT id, content, timestamp FROM clipboard_history ORDER BY timestamp DESC LIMIT 10")
+        .map_err(|e| e.to_string())?;
+    let records = stmt
+        .query_map([], |row| {
+            Ok(ClipboardRecord {
+                id: row.get(0)?,
+                content: row.get(1)?,
+                timestamp: row.get(2)?,
+            })
+        })
+        .map_err(|e| e.to_string())?
+        .collect::<SqliteResult<Vec<_>>>()
+        .map_err(|e| e.to_string())?;
+    Ok(records)
+}
+
+#[tauri::command]
+fn delete_latest_clipboard_record() -> Result<(), String> {
+    let conn = init_clipboard_db().map_err(|e| e.to_string())?;
+    conn.execute(
+        "DELETE FROM clipboard_history WHERE id = (SELECT id FROM clipboard_history ORDER BY timestamp DESC LIMIT 1)",
+        [],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
@@ -206,7 +277,10 @@ fn main() {
             set_clipboard_content,
             get_events,
             add_event,
-            delete_event
+            delete_event,
+            add_clipboard_record,
+            get_clipboard_history,
+            delete_latest_clipboard_record
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

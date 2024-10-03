@@ -28,6 +28,13 @@ const ClipboardManager: React.FC = () => {
   const checkClipboard = async () => {
     try {
       const content = await invoke<string>('get_clipboard_content');
+
+      // 如果当前的剪贴板内容已经被删除，则不进行任何操作
+      if (localStorage.getItem("deletedCurrentClipboard") === content) {
+        return;
+      }
+
+      // 如果当前的剪贴板内容发生变化，则更新当前剪贴板内容
       if (content !== currentClipboard && content.trim() !== '') {
         setCurrentClipboard(content);
         addClipboardItem(content);
@@ -76,9 +83,13 @@ const ClipboardManager: React.FC = () => {
     }
   };
 
-  const deleteClipboardItem = (id: number) => {
+  const deleteClipboardItem = (id: number, content: string) => {
     setClipboardItems(items => {
       const newItems = items.filter(item => item.id !== id);
+     
+      if (content === currentClipboard && content.trim() !== '') {
+        localStorage.setItem('deletedCurrentClipboard', content);
+      }
       localStorage.setItem('clipboardItems', JSON.stringify(newItems));
       return newItems;
     });
@@ -103,7 +114,7 @@ const ClipboardManager: React.FC = () => {
                   <FaCopy />
                 </button>
                 <button
-                  onClick={() => deleteClipboardItem(item.id)}
+                  onClick={() => deleteClipboardItem(item.id, item.content)}
                   className="p-1 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 ml-2"
                   title="Delete item"
                 >

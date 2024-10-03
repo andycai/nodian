@@ -6,6 +6,7 @@ import TimeConverter from './components/TimeConverter';
 import HashEncoder from './components/HashEncoder';
 import ClipboardManager from './components/ClipboardManager';
 import Calendar from './components/Calendar';
+// import ClipboardHistory from './components/ClipboardHistory';
 
 const App: React.FC = () => {
   const [activeFeature, setActiveFeature] = useState<string>('markdown');
@@ -29,6 +30,7 @@ const App: React.FC = () => {
         {activeFeature === 'time' && <TimeConverter />}
         {activeFeature === 'hash' && <HashEncoder />}
         {activeFeature === 'clipboard' && <ClipboardManager />}
+        {/* {activeFeature === 'clipboard2' && <ClipboardHistory />} */}
         {activeFeature === 'calendar' && <Calendar />}
       </div>
     </div>

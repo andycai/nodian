@@ -15,6 +15,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveFeature }) => {
     { id: 'time', icon: FaClock, label: 'TimeConverter' },
     { id: 'hash', icon: FaLock, label: 'HashEncoder' },
     { id: 'clipboard', icon: FaClipboard, label: 'Clipboard' },
+    // { id: 'clipboard2', icon: FaClipboard, label: 'Clipboard' },
   ];
 
   return (
