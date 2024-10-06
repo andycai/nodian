@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FileTree from './FileTree';
 import Editor from './Editor';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core';
 
 const MarkdownEditor: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);

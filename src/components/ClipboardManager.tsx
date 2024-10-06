@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaCopy, FaTrash } from 'react-icons/fa';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core';
 
 interface ClipboardItem {
   id: number;
